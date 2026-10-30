@@ -179,3 +179,16 @@
   .auth-shell{padding-top:calc(24px + env(safe-area-inset-top));}
   .chat-header{min-height:68px;height:auto;padding-top:8px;padding-bottom:8px}
 }
+
+/* Icon-based controls and FAB menu */
+.footer-icon svg,.fab-plus svg,.overflow-menu svg,.fab-menu svg,.section-empty-icon svg{display:block;flex:none}
+.overflow-menu button{display:flex;align-items:center;gap:12px}
+.fab-wrap{position:absolute;right:20px;bottom:91px;z-index:7}
+.fab-wrap .new-chat-fab{position:relative;right:auto;bottom:auto}
+.fab-menu{position:absolute;right:0;bottom:64px;min-width:220px;padding:7px;background:#fff;border:1px solid var(--rc-line);border-radius:14px;box-shadow:0 12px 34px #202b3c22}
+.fab-menu button{width:100%;display:flex;align-items:center;gap:12px;padding:12px;border-radius:9px;text-align:left;font-size:13px;color:var(--rc-ink)}
+.fab-menu button:hover{background:var(--rc-soft)}
+.dark .fab-menu{background:#202a3c;border-color:#39445a}
+.dark .fab-menu button{color:#e9ecf5}
+.dark .fab-menu button:hover{background:#293449}
+@media(max-width:700px){.fab-wrap{right:18px;bottom:calc(83px + env(safe-area-inset-bottom))}}
