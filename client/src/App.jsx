@@ -32,16 +32,22 @@ function Auth({ onAuth }) {
 }
 function App() {
   const [user, setUser] = useState(null), [loading, setLoading] = useState(true), [conversations, setConversations] = useState([]), [active, setActive] = useState(null), [messages, setMessages] = useState([]), [draft, setDraft] = useState(""), [query, setQuery] = useState(""), [users, setUsers] = useState([]), [searching, setSearching] = useState(false), [tab, setTab] = useState("chats"), [dark, setDark] = useState(false), [connected, setConnected] = useState(false), [error, setError] = useState(""), [showProfile, setShowProfile] = useState(false), [showMenu, setShowMenu] = useState(false), [showAbout, setShowAbout] = useState(false), [showSettings, setShowSettings] = useState(false), [chatType, setChatType] = useState("private");
-  const ws = useRef(null), reconnect = useRef(1000), reconnectTimer = useRef(null), activeRef = useRef(null), userRef = useRef(null), drafts = useRef({}), bottomRef = useRef(null), typingTimer = useRef(null), seen = useRef(new Set());
+  const ws = useRef(null), reconnect = useRef(1000), reconnectTimer = useRef(null), activeRef = useRef(null), userRef = useRef(null), drafts = useRef({}), bottomRef = useRef(null), typingTimer = useRef(null), seen = useRef(new Set()), deliveryTimers = useRef(new Map());
   activeRef.current = active; userRef.current = user;
   const loadConversations = useCallback(async () => { try { const d = await api("/api/conversations"); setConversations(d.conversations || []); } catch {} }, []);
   const loadMessages = useCallback(async id => {
     if (!id) return;
     try { const d = await api(`/api/conversations/${id}/messages`); setMessages(prev => {
       if (activeRef.current !== id) return prev;
-      const merged = new Map(prev.filter(m=>m.pending).map(m=>[String(m.id),m]));
+      const merged = new Map();
       (d.messages||[]).forEach(m=>merged.set(String(m.id),m));
-      return [...merged.values()].sort((a,b)=>Number(a.id)-Number(b.id));
+      // Keep optimistic messages until the server confirms them; failed messages must never vanish.
+      prev.filter(m=>m.pending||m.failed).forEach(local=>{
+        const serverCopy=[...merged.values()].find(m=>m.clientMessageId && m.clientMessageId===local.clientMessageId);
+        if(serverCopy) merged.set(String(serverCopy.id), {...serverCopy,pending:false,failed:false});
+        else merged.set(String(local.id),local);
+      });
+      return [...merged.values()].sort((a,b)=>new Date(a.createdAt)-new Date(b.createdAt));
     }); } catch(e) { setError(e.message); }
   }, []);
   useEffect(() => { api("/api/auth/me").then(d=>setUser(d.user)).catch(()=>{}).finally(()=>setLoading(false)); }, []);
@@ -70,8 +76,17 @@ function App() {
           }
           loadConversations();
         }
-        if(event==="message:ack" && data.message) setMessages(prev=>prev.map(m=>m.clientMessageId===data.clientMessageId?{...data.message,pending:false}:m));
-        if(event==="message:error") { setMessages(prev=>prev.map(m=>m.clientMessageId===data.clientMessageId?{...m,pending:false,failed:true}:m)); setError(data.error||"Pesan gagal dikirim"); }
+        if(event==="message:ack" && data.message) {
+          clearTimeout(deliveryTimers.current.get(data.clientMessageId));
+          deliveryTimers.current.delete(data.clientMessageId);
+          setMessages(prev=>prev.map(m=>m.clientMessageId===data.clientMessageId?{...data.message,pending:false,failed:false}:m));
+        }
+        if(event==="message:error") {
+          clearTimeout(deliveryTimers.current.get(data.clientMessageId));
+          deliveryTimers.current.delete(data.clientMessageId);
+          setMessages(prev=>prev.map(m=>m.clientMessageId===data.clientMessageId?{...m,pending:false,failed:true,errorText:data.error||"Pesan gagal dikirim"}:m));
+          setError(data.error||"Pesan gagal dikirim");
+        }
         if(event==="conversation:update" || event==="unread:update") loadConversations();
         if(event==="message:updated" || event==="message:deleted") loadMessages(activeRef.current);
       };
@@ -106,16 +121,39 @@ function App() {
     } catch(e){setError(e.message);}
   }
   function openConversation(c) { setActive(c.id); setDraft(drafts.current[c.id]||""); setShowProfile(false); }
-  function sendMessage(e) {
-    e?.preventDefault(); const content=draft.trim(); if(!content||!active||content.length>5000)return;
-    const clientMessageId=crypto.randomUUID?crypto.randomUUID():`${Date.now()}-${Math.random()}`;
-    const optimistic={id:`tmp-${clientMessageId}`,conversationId:active,senderId:user.id,clientMessageId,content,type:"text",createdAt:new Date().toISOString(),displayName:user.displayName,pending:true};
-    setMessages(prev=>[...prev,optimistic]); setDraft(""); drafts.current[active]="";
-    if(ws.current?.readyState===WebSocket.OPEN) ws.current.send(JSON.stringify({event:"message:send",data:{conversationId:active,clientMessageId,content}}));
-    else api(`/api/conversations/${active}/messages`,{method:"POST",body:JSON.stringify({clientMessageId,content})})
-      .then(d=>setMessages(prev=>prev.map(m=>m.clientMessageId===clientMessageId?{...d.message,pending:false}:m)))
-      .catch(()=>setMessages(prev=>prev.map(m=>m.clientMessageId===clientMessageId?{...m,pending:false,failed:true}:m)));
+  function transmitMessage(conversationId, content, existingId) {
+    const clientMessageId=existingId || (crypto.randomUUID?crypto.randomUUID():`${Date.now()}-${Math.random()}`);
+    const optimistic={id:`tmp-${clientMessageId}`,conversationId,senderId:user.id,clientMessageId,content,type:"text",createdAt:new Date().toISOString(),displayName:user.displayName,pending:true,failed:false};
+    setMessages(prev=>existingId
+      ? prev.map(m=>m.clientMessageId===existingId?{...optimistic}:m)
+      : [...prev,optimistic]);
+    const markFailed=()=>setMessages(prev=>prev.map(m=>m.clientMessageId===clientMessageId?{...m,pending:false,failed:true}:m));
+    if(ws.current?.readyState===WebSocket.OPEN) {
+      try {
+        ws.current.send(JSON.stringify({event:"message:send",data:{conversationId,clientMessageId,content}}));
+        const timer=setTimeout(()=>{deliveryTimers.current.delete(clientMessageId);markFailed();},15000);
+        deliveryTimers.current.set(clientMessageId,timer);
+      } catch {
+        markFailed();
+      }
+    } else {
+      api(`/api/conversations/${conversationId}/messages`,{method:"POST",body:JSON.stringify({clientMessageId,content})})
+        .then(d=>setMessages(prev=>prev.map(m=>m.clientMessageId===clientMessageId?{...d.message,pending:false,failed:false}:m)))
+        .catch(()=>markFailed());
+    }
     loadConversations();
+  }
+  function sendMessage(e) {
+    e?.preventDefault();
+    const content=draft.trim();
+    if(!content||!active||content.length>5000)return;
+    transmitMessage(active,content);
+    setDraft(""); drafts.current[active]="";
+  }
+  function retryMessage(message) {
+    if(!message?.content||!message.conversationId)return;
+    transmitMessage(message.conversationId,message.content);
+    setMessages(prev=>prev.filter(m=>m.clientMessageId!==message.clientMessageId));
   }
   function typeChange(value) {
     setDraft(value);
@@ -149,7 +187,7 @@ function App() {
             const own=m.senderId===user.id;
             const previous=messages[i-1];
             const showDate=!previous||dateLabel(previous.createdAt)!==dateLabel(m.createdAt);
-            return <React.Fragment key={m.id}>{showDate&&<div className="date-separator"><span>{dateLabel(m.createdAt)}</span></div>}<div className={`message-line ${own?"outgoing":"incoming"}`}><div className="bubble"><div className="message-content">{m.content}</div><div className="message-meta">{m.editedAt&&<span>diedit </span>}{time(m.createdAt)} {own&&<span className={`checks ${m.pending?"pending":m.failed?"failed":""}`}>{m.pending?"◷":m.failed?"!":"✓"}</span>}</div>{m.failed&&<button className="retry" onClick={()=>{setDraft(m.content);setMessages(prev=>prev.filter(x=>x.id!==m.id));}}>Coba lagi</button>}</div></div></React.Fragment>;
+            return <React.Fragment key={m.id}>{showDate&&<div className="date-separator"><span>{dateLabel(m.createdAt)}</span></div>}<div className={`message-line ${own?"outgoing":"incoming"}`}><div className="bubble"><div className="message-content">{m.content}</div><div className="message-meta">{m.editedAt&&<span>diedit </span>}{time(m.createdAt)} {own&&<span className={`checks ${m.pending?"pending":m.failed?"failed":""}`}>{m.pending?"◷":m.failed?"!":"✓"}</span>}</div>{m.failed&&<div className="failed-actions"><span>Belum terkirim</span><button className="retry" onClick={()=>retryMessage(m)}>Kirim ulang</button></div>}</div></div></React.Fragment>;
           })}
           <div ref={bottomRef}/>{messages.length===0&&<div className="first-message"><div>👋</div><b>Mulai percakapan</b><p>Kirim pesan pertama kamu.</p></div>}
         </section>

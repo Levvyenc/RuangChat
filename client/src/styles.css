@@ -83,3 +83,99 @@
  .fab-plus{width:38px;height:38px}
  .side-footer{z-index:4}
 }
+
+
+/* RuangChat identity refresh: ink, mineral blue and warm paper (no WhatsApp green). */
+:root{
+  --rc-ink:#202B3C; --rc-blue:#5267D8; --rc-blue-deep:#3549B8;
+  --rc-paper:#F4F2ED; --rc-panel:#FFFFFF; --rc-line:#E4E2DC;
+  --rc-muted:#788294; --rc-accent:#D98F68; --rc-soft:#E9EDFF;
+}
+:root, body { background:var(--rc-paper); color:var(--rc-ink); }
+.app{background:var(--rc-paper);color:var(--rc-ink)}
+.sidebar,.chat-list,.search-results,.profile-modal{background:var(--rc-panel)}
+.side-header,.chat-header,.composer,.welcome{background:#FBFAF7}
+.brand-mark,.brand-mark.small{background:linear-gradient(145deg,#6478E5,#394EBB);color:#fff}
+.brand-mark:before{border-color:#ffffff30}
+.avatar{background:linear-gradient(145deg,#E7EAFE,#CFD7FA);color:#394EBB}
+.avatar i{background:#65A98B}
+.head-actions button,.chat-header>button:last-child,.back-button{color:#65718A}
+.tabs button,.message-filters button{background:#F0F1F5;color:#687286}
+.tabs button.selected,.message-filters button.active-filter{background:var(--rc-soft);color:var(--rc-blue-deep)}
+.chat-row:hover,.chat-row.active,.person-result:hover{background:#F2F3FA}
+.row-preview i{background:var(--rc-soft);color:var(--rc-blue-deep)}
+.connection.online,.checks{color:#5D78C9}
+.dot.on{background:#65A98B}
+.conversation{background:#F2F0EA}
+.chat-header{border-color:var(--rc-line)}
+.message-area{background-color:#F2F0EA;background-image:radial-gradient(#9DA6B51A 1px,transparent 1px),radial-gradient(#9DA6B51A 1px,transparent 1px)}
+.bubble{background:#fff;border:1px solid #E9E7E1;border-radius:12px}
+.outgoing .bubble{background:#E8ECFF;border-color:#DCE2FF;border-top-right-radius:4px}
+.incoming .bubble{border-top-left-radius:4px}
+.message-meta{color:#8992A1}
+.checks.pending{color:#9AA3B2}.checks.failed{color:#C45B50}
+.encryption-note{background:#F8EEDC;color:#78664F;border:1px solid #EFE3CE}
+.date-separator span{background:#FFFFFFD9;color:#788294}
+.composer{border-top:1px solid var(--rc-line)}
+.composer textarea{background:#fff;border:1px solid #E4E5EB;border-radius:14px}
+.composer .send-button,.primary{background:var(--rc-blue);color:#fff}
+.composer .send-button:hover,.primary:hover{background:var(--rc-blue-deep)}
+.welcome{border-bottom:5px solid var(--rc-blue)}
+.welcome-illustration{background:#E9EDFF}
+.welcome-bubble{background:var(--rc-blue);color:#fff;box-shadow:18px 15px 0 #D7DDFB}
+.welcome-illustration>span{color:var(--rc-accent)}
+.section-empty-icon{background:#E9EDFF;color:var(--rc-blue)}
+.footer-nav.footer-selected{color:var(--rc-blue-deep);border-top-color:var(--rc-blue);background:#F2F3FC}
+.footer-nav.footer-selected .footer-icon{background:#E3E8FF}
+.new-chat-fab{background:linear-gradient(135deg,#6478E5,#394EBB);box-shadow:0 8px 22px #394EBB35}
+.new-chat-fab:hover{box-shadow:0 12px 26px #394EBB40}
+.auth-shell{background:linear-gradient(180deg,#3549B8 0,#3549B8 31%,#F4F2ED 31%,#F4F2ED 100%)}
+.auth-card{border:1px solid #E9E7E1}
+.auth-card input{border-color:#E1E4EA}
+.link{color:var(--rc-blue-deep)}
+.search-wrap input{background:#F1F2F5}
+.search-results{border-color:#E4E5EB}
+.overflow-menu button:hover{background:#F1F2F8}
+.menu-divider{background:var(--rc-line)}
+.toggle.toggle-on{background:var(--rc-blue)}
+.toast{background:#202B3C}
+.boot{color:var(--rc-blue-deep)}
+.failed-actions{display:flex;align-items:center;justify-content:flex-end;gap:10px;margin-top:5px;font-size:10px;color:#B65B50}
+.failed-actions .retry{font-size:10px;color:#B64D43;font-weight:700;text-decoration:none;padding:3px 7px;border:1px solid #EBCBC6;border-radius:7px}
+.failed-actions .retry:hover{background:#FFF1EF}
+.dark{background:#151B28;color:#E9ECF5}
+.dark .sidebar,.dark .chat-list,.dark .search-results,.dark .profile-modal{background:#1D2535;color:#E9ECF5}
+.dark .side-header,.dark .chat-header,.dark .composer,.dark .welcome{background:#202A3C;color:#E9ECF5}
+.dark .chat-row{border-color:#2B3548}
+.dark .chat-row:hover,.dark .chat-row.active{background:#29334A}
+.dark .search-wrap{background:#1D2535}
+.dark .search-wrap input,.dark .composer textarea{background:#293449;color:#E9ECF5;border-color:#39445A}
+.dark .message-area{background-color:#171F2E;background-image:radial-gradient(#ffffff08 1px,transparent 1px)}
+.dark .incoming .bubble{background:#293449;color:#E9ECF5;border-color:#39445A}
+.dark .outgoing .bubble{background:#303D68;color:#F3F5FF;border-color:#435184}
+.dark .tabs button,.dark .message-filters button{background:#293449;color:#C6CDDC}
+.dark .tabs button.selected,.dark .message-filters button.active-filter{background:#354575;color:#E2E7FF}
+.dark .side-footer{background:#1D2535;border-color:#2B3548}
+.dark .footer-nav{color:#AEB8CC}
+.dark .footer-nav.footer-selected{background:#29334A;color:#B9C5FF;border-top-color:#8294F0}
+.dark .footer-nav.footer-selected .footer-icon{background:#354575}
+.dark .welcome-illustration,.dark .section-empty-icon{background:#303B59;color:#B9C5FF}
+.dark .welcome-bubble{background:#5267D8;color:#fff;box-shadow:18px 15px 0 #354575}
+.dark .welcome h1,.dark .section-empty b{color:#E9ECF5}
+.dark .encryption-note{background:#3B3540;color:#E8D8C5;border-color:#504657}
+.dark .date-separator span{background:#293449;color:#D0D6E3}
+.dark .overflow-menu{--menu-bg:#202A3C;border-color:#39445A}
+.dark .overflow-menu button{color:#E9ECF5}
+.dark .overflow-menu button:hover{background:#293449}
+.dark .menu-divider,.dark .setting-row{border-color:#39445A}
+.dark .profile-modal .secondary{color:#E9ECF5;border-color:#39445A}
+.dark .person-result:hover{background:#293449}
+.dark .new-chat-fab{background:linear-gradient(135deg,#6478E5,#394EBB)}
+.dark .failed-actions{color:#F0A49A}
+.dark .failed-actions .retry{color:#FFB6AB;border-color:#744B4B}
+@media(max-width:700px){
+  /* Keep the app content below Android's status bar/notch. */
+  .app{padding-top:env(safe-area-inset-top);height:100dvh}
+  .auth-shell{padding-top:calc(24px + env(safe-area-inset-top));}
+  .chat-header{min-height:68px;height:auto;padding-top:8px;padding-bottom:8px}
+}
