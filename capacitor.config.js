@@ -1,7 +1,5 @@
-const { defineConfig } = require('@capacitor/cli');
-module.exports = defineConfig({
+module.exports = {
   appId: 'id.ruangchat.app',
   appName: 'RuangChat',
-  webDir: 'client/dist',
-  bundledWebRuntime: false
-});
+  webDir: 'client/dist'
+};
