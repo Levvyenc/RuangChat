@@ -1,0 +1,51 @@
+name: Build RuangChat APK
+
+on:
+  workflow_dispatch:
+    inputs:
+      api_base_url:
+        description: "URL HTTPS dari console server Cloudflare (contoh https://xxxx.trycloudflare.com), tanpa /ws"
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  build-apk:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@v4
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+      - name: Install dependencies
+        run: npm install
+      - name: Validate API URL
+        env:
+          API_BASE_URL: ${{ inputs.api_base_url }}
+        run: |
+          node -e 'const u=new URL(process.env.API_BASE_URL); if(u.protocol!=="https:" || !u.hostname) process.exit(1); console.log("Using API host:",u.host)'
+      - name: Build React frontend
+        env:
+          VITE_API_BASE_URL: ${{ inputs.api_base_url }}
+        run: npm run build
+      - name: Add Android platform
+        run: npx cap add android
+      - name: Sync Capacitor
+        run: npx cap sync android
+      - name: Build debug APK
+        run: cd android && chmod +x gradlew && ./gradlew assembleDebug
+      - name: Upload APK artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: RuangChat-APK
+          path: android/app/build/outputs/apk/debug/app-debug.apk
+          if-no-files-found: error
